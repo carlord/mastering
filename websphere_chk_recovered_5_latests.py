@@ -74,3 +74,11 @@ class sshconx:
        else:
           WAS_register = ['none']
           return WAS_register 
+
+   def main():
+      listedop = "hi:"
+      opargreader(sys.argv[1:])
+
+   if __name__=="__main__":
+      main()
+
