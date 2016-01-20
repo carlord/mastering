@@ -1,13 +1,22 @@
 #!/usr/bin/env python/
 import os, re, subprocess, crypt, random, string, sys, getopt, platform, fileinput, shlex, socket, paramiko
-
 #this pretends to be a class with all ssh subrutines needed for an specific remote server conexion
+#lexbz181189.lex.dst.ibm.com
+#sbybz3106.sby.ibm.com
+#sbybz3107.sby.ibm.co#lexbz1156.lexington.ibm.com
+#--------- PARAMIKO block ------------------------------------------ 
+#mySSHKEY='/home/carlos/.ssh/id_rsa.pub'   ##-- to be defined with personal user's pub key'
+#hostname_uno ="9.45.2.114"  #- set temporal variable to get hostname
+#usrname ="root"
+
+
 
 class sshconx:
    #self.mySSHKEY  #'/home/carlos/.ssh/id_rsa.pub'   ##-- to be defined with personal user's pub key'
    #self.hostname_uno  #"9.45.2.114"  #- set temporal variable to get hostname
    #self.my_fqdn
    #self.usrname          # "root"
+   
    def myconnect(self,fqdn_or_ip,myuser,mysshk):
        sshcon =   paramiko.SSHClient()             #- will define the object to work
        sshcon.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -36,7 +45,7 @@ class sshconx:
                salida[i] = re.sub('\n','', salida[i] )
            return salida  
        
-   def WebSphere_eval(self): #performs WAS search, retrieving information about install, User & Version
+   def WebSphere_eval(self, hostname): #performs WAS search, retrieving information about install, User & Version
        midware_name = 'WebSphere'
        instbinPath  = []
        WAS_register = []
@@ -74,4 +83,10 @@ class sshconx:
        else:
           WAS_register = ['none']
           return WAS_register 
-
+   
+   def main():     
+      registro = WebSphere_eval(hostname_uno)
+      print registro
+   
+   if __name__=="__main__":
+      main() 
