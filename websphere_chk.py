@@ -42,7 +42,7 @@ class sshconx:
            return errores
        elif len(salida) > 0:
            for i in range (len(salida)):
-               salida[i] = re.sub('\n','', salida[i] )
+               salida[i] = str(re.sub('\n','', salida[i] ))
            return salida  
        
    def WebSphere_eval(self, hostname): #performs WAS search, retrieving information about install, User & Version
