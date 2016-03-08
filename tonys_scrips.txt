@@ -1,0 +1,66 @@
+function stats () {
+
+server=$1
+fsmon=$2
+
+ssh -T -o LogLevel=ERROR -o ServerAliveInterval=30 -o ServerAliveCountMax=1 -o ConnectTimeout=30 -o ConnectionAttempts=1 -o BatchMode=yes -o StrictHostKeyChecking=no -c blowfish root@$server <<STATS
+  echo -n 'DATE,'
+  date
+  echo -n 'UPTIME,'
+  uptime
+  echo -n 'CPUS,'
+  lparstat |sed -n 2p | awk '{print \$6}'| sed "s/lcpu=//g"
+  echo -n 'CPU_USAGE,'
+  lparstat |sed -n 6p |awk '{print \$1","\$2","\$3","\$4","\$5}' | tr -d "[:space:]"
+  mpstat 1 1 | grep ALL | awk '{print ","\$5","\$6}'
+  echo -n 'VMSTAT,'
+  vmstat |sed -n 7p | awk '{print \$6","\$7}'
+  echo -n 'MEM,'
+  svmon -G -O unit=MB | grep memory | awk '{print \$2,",",\$3,",",\$4}' | tr -d "[:space:]"
+  echo
+  echo -n 'PGSPACE,'
+  svmon -G -O unit=MB | grep space | awk '{print \$3,",",\$4}' | tr -d "[:space:]" 
+  echo
+  echo -n 'PKTS,'
+  netstat -v | head -9 | tail -1 | sed "s/Packets://g" | awk '{ print \$1","\$2}'
+  echo -n 'BYTES,'
+  netstat -v | head -10 | tail -1 | sed "s/Bytes://g" | awk '{ print \$1","\$2}'
+  echo -n 'NETERR,'
+  netstat -v | head -12 | tail -1 | sed "s/Transmit//g;s/Errors://g;s/Receive//g" | awk '{print \$1","\$2}'
+  echo -n 'NETDROP,'
+  netstat -v | head -13 | tail -1 | sed "s/Packets//g;s/Dropped://g" | awk '{print \$1","\$2}'
+  echo -n 'PROC,'
+ /bin/ps -no-header -eo pid,time,cpu,etime,sched,thcount,pmem,vsz,stat,ruser,args | sort -rn +6 | head -1 | awk '{print \$1","\$2","\$3","\$4","\$5","\$6","\$7","\$8","\$9","\$10","\$11}' | sed "s/[0-9]-//g" 
+  echo -n 'FSMON,'
+  df -mt $2 | sed -n 2p | awk '{print \$6","\$4","\$5}'
+STATS
+}
+ 
+function vgs () {
+
+server=$1
+
+ssh -T -o LogLevel=ERROR -o ServerAliveInterval=30 -o ServerAliveCountMax=1 -o ConnectTimeout=30 -o ConnectionAttempts=1 -o BatchMode=yes -o StrictHostKeyChecking=no -c blowfish root@$server <<DSKSTATS
+  echo -n 'NUMDF==='
+  df -mI | sed '1d' | wc -l | tr -d "[:space:]"
+  echo
+  echo -n 'NUMVGS==='
+  lsvg | wc -l | tr -d "[:space:]"
+  echo
+  echo -n 'NUMDEVS==='
+  lsdev | grep -w "Logical volume" | wc -l | tr -d "[:space:]"
+  echo
+  echo -n 'TIMESTAMP==='
+  perl -e '(\$sec,\$min,\$hour,\$mday,\$mon,\$year,\$junk,\$junk,\$junk)=localtime(time);print(sprintf("%4d-%02d-%02d %02d:%02d:%02d",\$year+1900,\$mon+1,\$mday,\$hour,\$min,\$sec))'
+  echo
+  echo -n 'DFOUT==='
+  for fs in \$(df -mI | sed '1d' | awk '{print "<tr><td>"\$1"</td><td>"\$2"</td><td>"\$3"</td><td>"\$4"</td><td>"\$5"</td><td>"\$6"</td></tr>"}');do echo -n \$fs;done
+  echo
+  echo -n 'VGOUT==='
+  for vg in \$(lsvg -l rootvg | sed '1,2d' | awk '{print "<tr><td>"r"</td><td>"\$1"</td><td>"\$2"</td><td>"\$3"</td><td>"\$4"</td><td>"\$5"</td><td>"\$6"</td><td>"\$7"</td></tr>"}');do echo -n \$vg;done
+  echo
+  echo -n 'DEVOUT==='
+  for vg in \$(lsvg -lp rootvg | sed '1,2d' | awk '{print "<tr><td>"r"</td><td>"\$1"</td><td>"\$2"</td><td>"\$3"</td><td>"\$4"</td><td>"\$5"</td><td>"\$6"</td><td>"\$7"</td></tr>"}');do echo -n \$vg;done
+  echo
+DSKSTATS
+}

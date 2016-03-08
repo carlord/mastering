@@ -1,0 +1,1 @@
+usrtest1,usrtest1,/bin/bash,Mauricio Gomez Tanco,changeme
