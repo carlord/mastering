@@ -8,7 +8,7 @@ import os, re, subprocess, crypt, random, string, sys, getopt, platform, fileinp
 #mySSHKEY='/home/carlos/.ssh/id_rsa.pub'   ##-- to be defined with personal user's pub key'
 #hostname_uno ="9.45.2.114"  #- set temporal variable to get hostname
 #usrname ="root"
-
+### re test and add instructions inside the code for it operation
 
 
 class sshconx:
