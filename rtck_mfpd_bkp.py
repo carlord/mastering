@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 # -- python script to perform Mobile First Platform Server backup
 # -- Racetrack MFPS backup 
-# -- ver 0.15 
+# -- ver 0.16 
 # -- changes; + this version include an enhancement to function synchbkpfolder(folder,foldname) that now accepts 2 parameters and not pass any path to docompfold() funtion
 # --          + getdb2pluginpath() retrieves value for DB2 plugin
-# --          + sweepoldtars() now cleanup files on 
+# --          + sweepoldtars() now cleanup files on and validate and ok status to exit (0) also invoque
 # --          + mail_preformatter() e-mail preformated messages
 # --          + snd_mail() e-mail event system function 
+# --          + memcleaner() New function that cleanup inactive memory preventing a memory leak
+# --          + Add a validation before error exit to cleanup temp files
 import os, re, subprocess, crypt, random, string, sys, getopt, platform, fileinput, shlex, socket, glob
 # -------------- Send mail system  import libraries: 
 import smtplib
@@ -121,19 +123,24 @@ def check_tune_setup(): ##verify and pre-set folders and logs
       os.makedirs(Backup_root_folder)
       reclogevent("Backup Folder : "+Backup_root_folder+" Created at "+str(re.sub('\n','',os.popen("date +%D ").read())))
    
+def memcleaner():  ##will get unused memory based on vmstat command and free inactive memory
+   cleanout = os.popen(" free &&  sync && echo 3 > /proc/sys/vm/drop_caches && echo \"\" && free ").read()   
+   reclogevent(msgsystem('Cached & inactive memory cleanup done','i'))   
 
-def sweepoldtars(): # check mfps tar files older than 1 day and cleanup main_backup_folder
+def sweepoldtars(status): # check mfps tar files older than 1 day and cleanup main_backup_folder
    reclogevent("Cleanup Tasks Operation begin at "+str(re.sub('\n','',os.popen("date +%T ").read()))+"\n")
    files = glob.glob(Backup_root_folder+"*")
    args = ['rm', '-rf'] + files
    standout, standerr = subprocess.Popen(args,  stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
    standout, standerr = subprocess.Popen(['find','/backuphist/', '-type', 'f', '-name', myhostname+'*', '-mtime', '+0', '-exec', 'rm', '-f', '{}', ";"], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-   reclogevent(msgsystem('Backup process Completed','O'))
-   reclogevent(msgsystem('Backup System will exit with status \'0\'','O'))
-   text = """Backup Compression tasks Successfull finished: \nSystem output:\n"""+standout+"""\n"""
-   reclogevent(msgsystem('Mail System sending message ','i'))
-   mail_preformatter('OK',text,logfilename)
-   sys.exit(0)
+   memcleaner()
+   if status == 'ok'
+      reclogevent(msgsystem('Backup process Completed','O'))
+      reclogevent(msgsystem('Backup System will exit with status \'0\'','O'))
+      text = """Backup Compression tasks Successfull finished: \nSystem output:\n"""+standout+"""\n"""
+      reclogevent(msgsystem('Mail System sending message ','i'))
+      mail_preformatter('OK',text,logfilename)
+      sys.exit(0)
 
 def docompfold(folder): #will compress the contents of the synchronized MFPS backup_folder
    reclogevent("Compressing main backup Folder : "+Backup_root_folder+" Operation begin at "+str(re.sub('\n','',os.popen("date +%T ").read()))+"\n")
@@ -144,6 +151,7 @@ def docompfold(folder): #will compress the contents of the synchronized MFPS bac
       reclogevent(msgsystem(standerr,'e'))
       reclogevent(msgsystem('Backup System will logout with status \'3\' ','w'))
       text = """Backup Compression tasks Failed: \nSystem output:\n"""+standerr+"""\n"""
+      sweepoldtars("error")
       reclogevent(msgsystem('Mail System sending message ','i'))
       mail_preformatter('ERROR',text,logfilename)
       sys.exit(3)
@@ -151,7 +159,7 @@ def docompfold(folder): #will compress the contents of the synchronized MFPS bac
       reclogevent(msgsystem('Backup compression Concluded Successfully: ','O'))
       reclogevent(msgsystem('Backup Path location: '+tarname,'i'))
       reclogevent(msgsystem('Will proceed with cleanup process','i'))
-      sweepoldtars()
+      sweepoldtars('ok')
 
 def synchbkpfolder(folder,foldname): ##perform local sycronization between MFPS(env critical folders) and MFPS (backup folder)
    if fileval(folder,'d') == 'OK':
@@ -167,6 +175,7 @@ def synchbkpfolder(folder,foldname): ##perform local sycronization between MFPS(
          reclogevent(msgsystem(standerr,'e'))
          reclogevent(msgsystem('Backup System will logout with status \'2\' ','w'))
          text = """Backup Synchronization Failed: """+folder+""" \nSystem output:\n"""+standerr+"""\n"""
+         sweepoldtars("error")
          reclogevent(msgsystem('Mail System sending message ','i'))
          mail_preformatter('ERROR',text,logfilename)
          sys.exit(2)
@@ -174,10 +183,12 @@ def synchbkpfolder(folder,foldname): ##perform local sycronization between MFPS(
          reclogevent(msgsystem('Backup Synchronization Concluded Successfully: ','O'))
          reclogevent(msgsystem(standout.splitlines()[-2],'i'))
          reclogevent(msgsystem(standout.splitlines()[-1],'i'))
+         memcleaner()
    else:
       reclogevent(msgsystem('Source folder: \"'+folder+'\" Validation Error ','e'))
       reclogevent(msgsystem('Backup System will logout with status \'21\' ','w'))
       text = """Source folder: \'"""+folder+"""\' Validation Error.  \nSystem output:\n"""+standerr+"""\n"""
+      sweepoldtars("error")
       reclogevent(msgsystem('Mail System sending message ','i'))
       mail_preformatter('ERROR',text,logfilename)
       sys.exit(21)
