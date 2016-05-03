@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -- python script to perform Mobile First Platform Server backup
 # -- Racetrack MFPS backup 
-# -- ver 0.16 
+# -- ver 0.161 
 # -- changes; + this version include an enhancement to function synchbkpfolder(folder,foldname) that now accepts 2 parameters and not pass any path to docompfold() funtion
 # --          + getdb2pluginpath() retrieves value for DB2 plugin
 # --          + sweepoldtars() now cleanup files on and validate and ok status to exit (0) also invoque
@@ -132,9 +132,9 @@ def sweepoldtars(status): # check mfps tar files older than 1 day and cleanup ma
    files = glob.glob(Backup_root_folder+"*")
    args = ['rm', '-rf'] + files
    standout, standerr = subprocess.Popen(args,  stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-   standout, standerr = subprocess.Popen(['find','/backuphist/', '-type', 'f', '-name', myhostname+'*', '-mtime', '+0', '-exec', 'rm', '-f', '{}', ";"], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
    memcleaner()
    if status == 'ok'
+      standout, standerr = subprocess.Popen(['find','/backuphist/', '-type', 'f', '-name', myhostname+'*', '-mtime', '+0', '-exec', 'rm', '-f', '{}', ";"], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
       reclogevent(msgsystem('Backup process Completed','O'))
       reclogevent(msgsystem('Backup System will exit with status \'0\'','O'))
       text = """Backup Compression tasks Successfull finished: \nSystem output:\n"""+standout+"""\n"""
