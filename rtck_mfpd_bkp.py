@@ -133,7 +133,7 @@ def sweepoldtars(status): # check mfps tar files older than 1 day and cleanup ma
    args = ['rm', '-rf'] + files
    standout, standerr = subprocess.Popen(args,  stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
    memcleaner()
-   if status == 'ok'
+   if status == 'ok':
       standout, standerr = subprocess.Popen(['find','/backuphist/', '-type', 'f', '-name', myhostname+'*', '-mtime', '+0', '-exec', 'rm', '-f', '{}', ";"], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
       reclogevent(msgsystem('Backup process Completed','O'))
       reclogevent(msgsystem('Backup System will exit with status \'0\'','O'))
@@ -183,7 +183,6 @@ def synchbkpfolder(folder,foldname): ##perform local sycronization between MFPS(
          reclogevent(msgsystem('Backup Synchronization Concluded Successfully: ','O'))
          reclogevent(msgsystem(standout.splitlines()[-2],'i'))
          reclogevent(msgsystem(standout.splitlines()[-1],'i'))
-         memcleaner()
    else:
       reclogevent(msgsystem('Source folder: \"'+folder+'\" Validation Error ','e'))
       reclogevent(msgsystem('Backup System will logout with status \'21\' ','w'))
