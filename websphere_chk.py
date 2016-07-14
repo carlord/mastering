@@ -1,5 +1,5 @@
 #!/usr/bin/env python/
-import os, re, subprocess, crypt, random, string, sys, getopt, platform, fileinput, shlex, socket, paramiko
+import os, re, subprocess, crypt, random, string, sys, getopt, platform, fileinput, shlex, socket, paramiko, pycurl, cStringIO
 #this pretends to be a class with all ssh subrutines needed for an specific remote server conexion
 #lexbz181189.lex.dst.ibm.com
 #sbybz3106.sby.ibm.com
@@ -9,7 +9,6 @@ import os, re, subprocess, crypt, random, string, sys, getopt, platform, fileinp
 #hostname_uno ="9.45.2.114"  #- set temporal variable to get hostname
 #usrname ="root"
 ### re test and add instructions inside the code for it operation
-
 
 class sshconx:
    #self.mySSHKEY  #'/home/carlos/.ssh/id_rsa.pub'   ##-- to be defined with personal user's pub key'
@@ -25,7 +24,7 @@ class sshconx:
 
    def __init__(self, fqdn, my_user, mysshkey, myhostname):
        self.my_fqdn  = fqdn
-       self.usrname  = my_user          # "root"
+       self.usrname  = my_user          # usually "root" or "dstadmin" 
        self.mySSHKEY = mysshkey
        self.hostname = myhostname
        self.conexion  = self.myconnect(self.my_fqdn,self.usrname,self.mySSHKEY)
@@ -83,6 +82,15 @@ class sshconx:
        else:
           WAS_register = ['none']
           return WAS_register 
+   
+   def curlstatus(self, theURL):  #--- gets the status code for a provided URL as parameter     
+       curl = pycurl.Curl()
+       buff = cStringIO.StringIO()
+       curl.setopt(pycurl.URL, theURL)
+       curl.setopt(pycurl.WRITEFUNCTION, buff.write)
+       curl.perform()
+       mystatus = curl.getinfo(pycurl.HTTP_CODE)
+       return mystatus
    
    def main():     
       registro = WebSphere_eval(hostname_uno)
